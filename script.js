@@ -1,121 +1,73 @@
-// Array de cartas com imagens de gatos
-const cartas = [
-  { id: 1, imagem: 'https://placekitten.com/100/100' },
-  { id: 2, imagem: 'https://placekitten.com/101/100' },
-  { id: 3, imagem: 'https://placekitten.com/102/100' },
-  { id: 4, imagem: 'https://placekitten.com/103/100' },
-  { id: 5, imagem: 'https://placekitten.com/104/100' },
-  { id: 6, imagem: 'https://placekitten.com/105/100' },
-];
+const emojis = ['🐱', '🐱', '😺', '😺', '😻', '😻', '😸', '😸'];
+let firstCard = null;
+let secondCard = null;
+let lockBoard = false;
+let matches = 0;
 
-const versoImagem = 'https://placehold.co/100x100?text=?'; // Imagem do verso
+const jogoContainer = document.getElementById('jogo');
+const resultadoDiv = document.getElementById('resultado');
 
-// Variáveis de controle
-let primeiraCarta = null;
-let segundaCarta = null;
-let bloqueado = false;
-let paresEncontrados = 0;
-
-// Referências ao DOM
-const campoJogo = document.getElementById('campo-jogo');
-const nomeJogadorInput = document.getElementById('nome-jogador');
-const mensagem = document.getElementById('mensagem');
-const contador = document.getElementById('contador');
-const btnReiniciar = document.getElementById('reiniciar');
-
-// Embaralhar as cartas
-function embaralhar(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+// Embaralha os emojis
+function shuffle(array) {
+  for (let i = array.length -1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
     [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// Cria as cartas
+function createCards() {
+  const shuffledEmojis = shuffle([...emojis]);
+  for (let i = 0; i < shuffledEmojis.length; i++) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.emoji = shuffledEmojis[i];
+    card.innerHTML = '';
+    card.addEventListener('click', flipCard);
+    jogoContainer.appendChild(card);
   }
 }
 
-// Criar as cartas na tela
-function criarCartas() {
-  campoJogo.innerHTML = '';
-  embaralhar(cartas);
-  cartas.forEach(carta => {
-    const cartaElemento = document.createElement('img');
-    cartaElemento.src = versoImagem; // Começa virada para o verso
-    cartaElemento.dataset.id = carta.id;
-    cartaElemento.dataset.virada = 'false'; // controla se está virada
+// Função ao clicar na carta
+function flipCard() {
+  if (lockBoard) return;
+  if (this === firstCard) return;
 
-    cartaElemento.classList.add('carta');
+  this.innerHTML = this.dataset.emoji;
 
-    cartaElemento.addEventListener('click', virarCarta);
-
-    campoJogo.appendChild(cartaElemento);
-  });
-  // Reiniciar variáveis
-  primeiraCarta = null;
-  segundaCarta = null;
-  bloqueado = false;
-  paresEncontrados = 0;
-  contador.textContent = `Pares encontrados: ${paresEncontrados}`;
-  mensagem.textContent = '';
-}
-
-// Função para virar a carta
-function virarCarta(e) {
-  if (bloqueado) return;
-
-  const carta = e.currentTarget;
-
-  if (carta.dataset.virada === 'true') return;
-
-  // Virar a carta
-  const idCarta = carta.dataset.id;
-  const cartaDados = cartas.find(c => c.id == idCarta);
-  carta.src = cartaDados.imagem;
-  carta.dataset.virada = 'true';
-
-  if (!primeiraCarta) {
-    primeiraCarta = carta;
+  if (!firstCard) {
+    firstCard = this;
     return;
   }
 
-  if (!segundaCarta) {
-    segundaCarta = carta;
-    verificarPar();
-  }
+  secondCard = this;
+  checkForMatch();
 }
 
-// Verificar se as cartas combinam
-function verificarPar() {
-  const id1 = primeiraCarta.dataset.id;
-  const id2 = segundaCarta.dataset.id;
-
-  if (id1 === id2) {
-    paresEncontrados++;
-    mensagem.textContent = 'Par encontrado!';
-    resetarSelecao();
-    if (paresEncontrados === cartas.length) {
-      mensagem.textContent = `Parabéns, ${nomeJogadorInput.value}! Você ganhou!`;
+// Verifica se as cartas combinam
+function checkForMatch() {
+  if (firstCard.dataset.emoji === secondCard.dataset.emoji) {
+    matches++;
+    resetCards();
+    if (matches === emojis.length / 2) {
+      const nome = document.getElementById('nomeInput').value.trim();
+      resultadoDiv.innerHTML = `Parabéns, ${nome || 'jogador'}! Você venceu!`;
     }
   } else {
-    bloqueado = true;
+    lockBoard = true;
     setTimeout(() => {
-      // Desvirar as cartas
-      primeiraCarta.src = versoImagem;
-      segundaCarta.src = versoImagem;
-      primeiraCarta.dataset.virada = 'false';
-      segundaCarta.dataset.virada = 'false';
-      resetarSelecao();
+      firstCard.innerHTML = '';
+      secondCard.innerHTML = '';
+      resetCards();
     }, 1000);
   }
 }
 
-// Resetar a seleção
-function resetarSelecao() {
-  primeiraCarta = null;
-  segundaCarta = null;
-  bloqueado = false;
-  contador.textContent = `Pares encontrados: ${paresEncontrados}`;
+function resetCards() {
+  [firstCard, secondCard] = [null, null];
+  lockBoard = false;
 }
 
-// Evento do botão reiniciar
-btnReiniciar.addEventListener('click', criarCartas);
-
-// Inicializar o jogo
-criarCartas();
+// Inicializa o jogo
+createCards();
