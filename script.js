@@ -8,6 +8,8 @@ const cartas = [
   { id: 6, imagem: 'https://placekitten.com/105/100' },
 ];
 
+const versoImagem = 'https://placehold.co/100x100?text=?'; // Imagem do verso
+
 // Variáveis de controle
 let primeiraCarta = null;
 let segundaCarta = null;
@@ -34,20 +36,12 @@ function criarCartas() {
   campoJogo.innerHTML = '';
   embaralhar(cartas);
   cartas.forEach(carta => {
-    const cartaElemento = document.createElement('div');
-    cartaElemento.classList.add('carta');
+    const cartaElemento = document.createElement('img');
+    cartaElemento.src = versoImagem; // Começa virada para o verso
     cartaElemento.dataset.id = carta.id;
+    cartaElemento.dataset.virada = 'false'; // controla se está virada
 
-    const frente = document.createElement('img');
-    frente.src = 'https://placehold.co/100x100?text=?'; // Imagem de trás
-    frente.classList.add('frente');
-
-    const verso = document.createElement('img');
-    verso.src = carta.imagem;
-    verso.classList.add('verso');
-
-    cartaElemento.appendChild(frente);
-    cartaElemento.appendChild(verso);
+    cartaElemento.classList.add('carta');
 
     cartaElemento.addEventListener('click', virarCarta);
 
@@ -68,9 +62,13 @@ function virarCarta(e) {
 
   const carta = e.currentTarget;
 
-  if (carta.classList.contains('virada')) return;
+  if (carta.dataset.virada === 'true') return;
 
-  carta.classList.add('virada');
+  // Virar a carta
+  const idCarta = carta.dataset.id;
+  const cartaDados = cartas.find(c => c.id == idCarta);
+  carta.src = cartaDados.imagem;
+  carta.dataset.virada = 'true';
 
   if (!primeiraCarta) {
     primeiraCarta = carta;
@@ -98,14 +96,17 @@ function verificarPar() {
   } else {
     bloqueado = true;
     setTimeout(() => {
-      primeiraCarta.classList.remove('virada');
-      segundaCarta.classList.remove('virada');
+      // Desvirar as cartas
+      primeiraCarta.src = versoImagem;
+      segundaCarta.src = versoImagem;
+      primeiraCarta.dataset.virada = 'false';
+      segundaCarta.dataset.virada = 'false';
       resetarSelecao();
     }, 1000);
   }
 }
 
-// Resetar a seleção de cartas
+// Resetar a seleção
 function resetarSelecao() {
   primeiraCarta = null;
   segundaCarta = null;
